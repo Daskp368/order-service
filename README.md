@@ -6,9 +6,11 @@
 
 - [x] Этап 0: требования и API-контракт.
 - [x] Этап 1: минимальная основа Spring Boot.
-- [ ] Этап 2: подключение PostgreSQL.
+- [x] Этап 2: подключение PostgreSQL.
+- [ ] Этап 3: миграции Flyway.
 
 API-контракт находится в [`docs/stage-0-api-contract.md`](docs/stage-0-api-contract.md).
+Конспект подключения базы находится в [`docs/stage-2-database.md`](docs/stage-2-database.md).
 
 ## Технологии этапа 1
 
@@ -20,7 +22,7 @@ API-контракт находится в [`docs/stage-0-api-contract.md`](docs
 - Spring Security;
 - JUnit и Spring Boot Test.
 
-JPA, PostgreSQL Driver и Flyway будут добавлены одновременно с настройкой базы данных на следующих этапах.
+JPA и PostgreSQL Driver добавлены на этапе 2. Flyway будет добавлен на этапе 3 вместе с первой миграцией.
 
 ## Команды
 
@@ -50,6 +52,9 @@ JPA, PostgreSQL Driver и Flyway будут добавлены одноврем�
 | `OrderServiceApplication.java` | Точка входа в приложение |
 | `application.properties` | Настройки Spring Boot |
 | `OrderServiceApplicationTests.java` | Проверка загрузки Spring Context |
+| `.env.example` | Шаблон локальных переменных подключения к БД |
+
+Файл `.env` содержит локальные настройки и не отслеживается Git.
 
 ## Ожидаемое поведение безопасности
 
