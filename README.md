@@ -8,10 +8,13 @@
 - [x] Этап 1: минимальная основа Spring Boot.
 - [x] Этап 2: подключение PostgreSQL.
 - [x] Этап 3: миграции Flyway.
+- [x] Этап 4: сущности JPA.
 
 API-контракт находится в [`docs/stage-0-api-contract.md`](docs/stage-0-api-contract.md).
+Конспект основы Spring Boot находится в [`docs/stage-1-spring-boot-foundation.md`](docs/stage-1-spring-boot-foundation.md).
 Конспект подключения базы находится в [`docs/stage-2-database.md`](docs/stage-2-database.md).
 Конспект миграций находится в [`docs/stage-3-migrations.md`](docs/stage-3-migrations.md).
+Конспект сущностей JPA находится в [`docs/stage-4-jpa-entities.md`](docs/stage-4-jpa-entities.md).
 
 ## Технологии этапа 1
 
@@ -55,6 +58,8 @@ JPA и PostgreSQL Driver добавлены на этапе 2. Flyway и пер�
 | `OrderServiceApplicationTests.java` | Проверка загрузки Spring Context |
 | `.env.example` | Шаблон локальных переменных подключения к БД |
 | `V1__create_users_and_orders.sql` | Первая версия структуры базы данных |
+| `User.java`, `Order.java` | JPA-сущности пользователей и заказов |
+| `Role.java`, `OrderStatus.java` | Допустимые роли и статусы заказов |
 
 Файл `.env` содержит локальные настройки и не отслеживается Git.
 
