@@ -10,6 +10,7 @@
 - [x] Этап 3: миграции Flyway.
 - [x] Этап 4: сущности JPA.
 - [x] Этап 5: репозитории Spring Data JPA.
+- [x] Этап 6: регистрация пользователя.
 
 API-контракт находится в [`docs/stage-0-api-contract.md`](docs/stage-0-api-contract.md).
 Конспект основы Spring Boot находится в [`docs/stage-1-spring-boot-foundation.md`](docs/stage-1-spring-boot-foundation.md).
@@ -17,6 +18,7 @@ API-контракт находится в [`docs/stage-0-api-contract.md`](docs
 Конспект миграций находится в [`docs/stage-3-migrations.md`](docs/stage-3-migrations.md).
 Конспект сущностей JPA находится в [`docs/stage-4-jpa-entities.md`](docs/stage-4-jpa-entities.md).
 Конспект репозиториев находится в [`docs/stage-5-repositories.md`](docs/stage-5-repositories.md).
+Конспект регистрации находится в [`docs/stage-6-registration.md`](docs/stage-6-registration.md).
 
 ## Технологии этапа 1
 
@@ -64,14 +66,18 @@ JPA и PostgreSQL Driver добавлены на этапе 2. Flyway и пер�
 | `Role.java`, `OrderStatus.java` | Допустимые роли и статусы заказов |
 | `UserRepository.java` | Доступ к данным пользователей |
 | `OrderRepository.java` | Доступ к данным заказов |
+| `RegisterRequest.java`, `UserResponse.java` | Входной и выходной DTO регистрации |
+| `AuthController.java` | HTTP endpoint регистрации |
+| `AuthService.java` | Правила регистрации и транзакция |
+| `SecurityConfig.java` | BCrypt и правила доступа к регистрации |
 
 Файл `.env` содержит локальные настройки и не отслеживается Git.
 
 ## Ожидаемое поведение безопасности
 
-На этапе 1 Spring Security использует временную автоматическую конфигурацию. При запуске в логах появляется сгенерированный пароль, а запрос без аутентификации получает `401 Unauthorized`.
+Начиная с этапа 6, `POST /api/auth/register` доступен без аутентификации и без CSRF-токена. Остальные запросы требуют аутентифицированного пользователя. При запуске пока ещё появляется сгенерированный временный пароль Spring Security.
 
-Это не окончательная безопасность проекта. Собственная конфигурация JWT будет реализована на соответствующем этапе.
+Это не окончательная безопасность проекта. Временный пользователь Spring Security будет заменён собственной конфигурацией JWT на этапе аутентификации.
 
 ## Документация
 
