@@ -25,6 +25,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.context.ActiveProfiles;
 
 import com.example.orderservice.entity.Role;
 import com.example.orderservice.entity.User;
@@ -40,6 +41,7 @@ import jakarta.servlet.RequestDispatcher;
 @AutoConfigureMockMvc
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Transactional
+@ActiveProfiles("test")
 class AuthRegistrationIntegrationTest {
 
 	private final MockMvc mockMvc;
@@ -122,12 +124,57 @@ class AuthRegistrationIntegrationTest {
 		mockMvc.perform(post("/api/auth/register")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(registrationJson(username.toUpperCase(Locale.ROOT), secondPassword)))
-				.andExpect(status().isConflict());
+				.andExpect(status().isConflict())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(jsonPath("$.timestamp").isString())
+				.andExpect(jsonPath("$.status").value(409))
+				.andExpect(jsonPath("$.error").value("Conflict"))
+				.andExpect(jsonPath("$.message").value("Username уже занят"))
+				.andExpect(jsonPath("$.path").value("/api/auth/register"))
+				.andExpect(jsonPath("$.fieldErrors").doesNotExist());
 
 		entityManager.clear();
 		User storedUser = userRepository.findByUsername(username).orElseThrow();
 		assertThat(passwordEncoder.matches(firstPassword, storedUser.getPasswordHash())).isTrue();
 		assertThat(passwordEncoder.matches(secondPassword, storedUser.getPasswordHash())).isFalse();
+	}
+
+	@Test
+	void returnsSafeValidationErrorBody() throws Exception {
+		String rejectedPassword = "1234567";
+
+		MvcResult result = mockMvc.perform(post("/api/auth/register")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(registrationJson(uniqueUsername("invalid_password"), rejectedPassword)))
+				.andExpect(status().isBadRequest())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(jsonPath("$.timestamp").isString())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.error").value("Bad Request"))
+				.andExpect(jsonPath("$.message").value("Ошибка валидации"))
+				.andExpect(jsonPath("$.path").value("/api/auth/register"))
+				.andExpect(jsonPath("$.fieldErrors[0].field").value("password"))
+				.andExpect(jsonPath("$.fieldErrors[0].message")
+						.value("Пароль должен содержать не менее 8 Unicode-символов"))
+				.andExpect(jsonPath("$.fieldErrors[0].rejectedValue").doesNotExist())
+				.andReturn();
+
+		assertThat(result.getResponse().getContentAsString()).doesNotContain(rejectedPassword);
+	}
+
+	@Test
+	void returnsBadRequestForMalformedJson() throws Exception {
+		mockMvc.perform(post("/api/auth/register")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"username\":\"valid_user\",\"password\":"))
+				.andExpect(status().isBadRequest())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+				.andExpect(jsonPath("$.timestamp").isString())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.error").value("Bad Request"))
+				.andExpect(jsonPath("$.message").value("Некорректный JSON"))
+				.andExpect(jsonPath("$.path").value("/api/auth/register"))
+				.andExpect(jsonPath("$.fieldErrors").doesNotExist());
 	}
 
 	@ParameterizedTest
