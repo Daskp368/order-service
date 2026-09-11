@@ -17,6 +17,7 @@ import com.example.orderservice.dto.auth.RegisterRequest;
 import com.example.orderservice.dto.auth.UserResponse;
 import com.example.orderservice.entity.Role;
 import com.example.orderservice.entity.User;
+import com.example.orderservice.exception.ResourceNotFoundException;
 import com.example.orderservice.exception.UsernameAlreadyExistsException;
 import com.example.orderservice.repository.UserRepository;
 import com.example.orderservice.security.JwtService;
@@ -70,6 +71,14 @@ public class AuthService {
 		String token = jwtService.generateToken(authentication.getName());
 
 		return new LoginResponse(token, "Bearer", jwtService.getExpirationSeconds());
+	}
+
+	@Transactional(readOnly = true)
+	public UserResponse getCurrentUser(String username) {
+		User user = userRepository.findByUsername(username)
+				.orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+
+		return new UserResponse(user.getId(), user.getUsername(), user.getRole());
 	}
 
 	private boolean isUsernameUniqueConstraintViolation(Throwable exception) {
