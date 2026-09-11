@@ -24,6 +24,8 @@
 | Новый | `application-test.properties` | Содержит отдельный тестовый ключ, не используемый приложением |
 | Изменён | `OrderServiceApplicationTests`, `AuthRegistrationIntegrationTest` | Подключён профиль с тестовым JWT-секретом |
 
+![Путь защищённого JWT-запроса](assets/stage-8-protected-request-flow.svg)
+
 ## Путь запроса на вход
 
 | Шаг | Участник                     | Что происходит                                                                               |
