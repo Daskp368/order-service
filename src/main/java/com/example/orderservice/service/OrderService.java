@@ -1,0 +1,65 @@
+package com.example.orderservice.service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.orderservice.dto.order.CreateOrderRequest;
+import com.example.orderservice.dto.order.OrderResponse;
+import com.example.orderservice.entity.Order;
+import com.example.orderservice.entity.OrderStatus;
+import com.example.orderservice.entity.User;
+import com.example.orderservice.exception.ResourceNotFoundException;
+import com.example.orderservice.repository.OrderRepository;
+import com.example.orderservice.repository.UserRepository;
+
+@Service
+public class OrderService {
+
+	private final OrderRepository orderRepository;
+	private final UserRepository userRepository;
+
+	public OrderService(OrderRepository orderRepository, UserRepository userRepository) {
+		this.orderRepository = orderRepository;
+		this.userRepository = userRepository;
+	}
+
+	@Transactional
+	public OrderResponse createOrder(String username, CreateOrderRequest request) {
+		User currentUser = findCurrentUser(username);
+		Order order = new Order(
+				currentUser,
+				request.getDescription().strip(),
+				OrderStatus.CREATED,
+				LocalDateTime.now());
+		Order savedOrder = orderRepository.save(order);
+
+		return toResponse(savedOrder);
+	}
+
+	@Transactional(readOnly = true)
+	public List<OrderResponse> getCurrentUserOrders(String username) {
+		User currentUser = findCurrentUser(username);
+
+		return orderRepository.findAllByUser_IdOrderByCreatedAtDesc(currentUser.getId())
+				.stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
+	private User findCurrentUser(String username) {
+		return userRepository.findByUsername(username)
+				.orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+	}
+
+	private OrderResponse toResponse(Order order) {
+		return new OrderResponse(
+				order.getId(),
+				order.getUser().getId(),
+				order.getDescription(),
+				order.getStatus(),
+				order.getCreatedAt());
+	}
+}

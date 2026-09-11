@@ -14,6 +14,7 @@
 - [x] Этап 7: валидация и единый формат ошибок.
 - [x] Этап 8: вход и JWT-аутентификация.
 - [x] Этап 9: получение текущего пользователя.
+- [x] Этап 10: создание и получение заказов текущего пользователя.
 
 API-контракт находится в [`docs/stage-0-api-contract.md`](docs/stage-0-api-contract.md).
 Конспект основы Spring Boot находится в [`docs/stage-1-spring-boot-foundation.md`](docs/stage-1-spring-boot-foundation.md).
@@ -25,6 +26,7 @@ API-контракт находится в [`docs/stage-0-api-contract.md`](docs
 Конспект валидации и обработки ошибок находится в [`docs/stage-7-validation-errors.md`](docs/stage-7-validation-errors.md).
 Конспект входа и JWT-аутентификации находится в [`docs/stage-8-jwt-authentication.md`](docs/stage-8-jwt-authentication.md).
 Конспект получения текущего пользователя находится в [`docs/stage-9-current-user.md`](docs/stage-9-current-user.md).
+Конспект создания и получения заказов находится в [`docs/stage-10-creating-and-listing-orders.md`](docs/stage-10-creating-and-listing-orders.md).
 
 ## Технологии этапа 1
 
@@ -85,14 +87,18 @@ JWT_SECRET=<результат команды>
 | `OrderRepository.java` | Доступ к данным заказов |
 | `RegisterRequest.java`, `UserResponse.java` | Входной и выходной DTO регистрации |
 | `LoginRequest.java`, `LoginResponse.java` | Входной и выходной DTO аутентификации |
+| `CreateOrderRequest.java`, `OrderResponse.java` | Входной и выходной DTO заказа |
 | `AuthController.java` | HTTP endpoints регистрации, входа и текущего пользователя |
 | `AuthService.java` | Регистрация, проверка учётных данных, выпуск JWT и чтение текущего пользователя |
+| `OrderController.java` | HTTP endpoints создания и получения своих заказов |
+| `OrderService.java` | Назначение владельца и начального состояния заказа, получение заказов владельца |
 | `SecurityConfig.java` | BCrypt, stateless-режим и правила доступа к endpoints |
 | `DatabaseUserDetailsService.java` | Загрузка пользователя и роли из PostgreSQL для Spring Security |
 | `JwtService.java` | Выпуск и проверка JWT с подписью `HS256` |
 | `JwtAuthenticationFilter.java` | Bearer-аутентификация защищённых запросов |
 | `RestAuthenticationEntryPoint.java`, `RestAccessDeniedHandler.java` | Единые JSON-ответы `401` и `403` |
 | `AuthMeIntegrationTest.java` | Проверка безопасного профиля владельца JWT |
+| `OrderApiIntegrationTest.java` | Проверка создания заказа и изоляции заказов пользователей |
 | `ApiErrorResponse.java`, `FieldValidationError.java` | Единый JSON обычных ошибок и ошибок полей |
 | `ApiExceptionHandler.java` | Преобразование исключений в безопасные HTTP-ответы |
 | `CreateOrderRequest.java` | Входной DTO с правилом проверки будущего описания заказа |
@@ -111,6 +117,8 @@ Authorization: Bearer <token>
 Приложение работает без HTTP-сессии, form login и HTTP Basic. Пользователь и его актуальная роль загружаются из PostgreSQL при каждом защищённом запросе. Ролевые ограничения конкретных административных endpoints будут добавлены на этапе 11.
 
 `GET /api/auth/me` возвращает `id`, `username` и актуальную роль владельца предъявленного JWT. Endpoint не принимает `userId`: пользователя определяет сервер из текущей `Authentication`.
+
+`POST /api/orders` создаёт заказ текущего пользователя. Сервер сам назначает владельца, статус `CREATED` и время создания. `GET /api/orders` возвращает только заказы владельца JWT, от новых к старым. Пагинация будет добавлена на этапе 13.
 
 ## Документация
 
