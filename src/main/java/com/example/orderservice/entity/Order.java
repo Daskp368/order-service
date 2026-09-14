@@ -1,6 +1,7 @@
 package com.example.orderservice.entity;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -62,6 +63,10 @@ public class Order {
 
 	public OrderStatus getStatus() {
 		return status;
+	}
+
+	public void changeStatus(OrderStatus status) {
+		this.status = Objects.requireNonNull(status, "Статус заказа обязателен");
 	}
 
 	public LocalDateTime getCreatedAt() {

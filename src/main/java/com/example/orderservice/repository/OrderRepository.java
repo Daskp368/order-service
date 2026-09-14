@@ -10,4 +10,6 @@ import com.example.orderservice.entity.Order;
 public interface OrderRepository extends JpaRepository<Order, UUID> {
 
 	List<Order> findAllByUser_IdOrderByCreatedAtDesc(UUID userId);
+
+	List<Order> findAllByOrderByCreatedAtDesc();
 }

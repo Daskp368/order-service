@@ -2,12 +2,14 @@ package com.example.orderservice.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.orderservice.dto.order.CreateOrderRequest;
 import com.example.orderservice.dto.order.OrderResponse;
+import com.example.orderservice.dto.order.UpdateOrderStatusRequest;
 import com.example.orderservice.entity.Order;
 import com.example.orderservice.entity.OrderStatus;
 import com.example.orderservice.entity.User;
@@ -47,6 +49,23 @@ public class OrderService {
 				.stream()
 				.map(this::toResponse)
 				.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<OrderResponse> getAllOrders() {
+		return orderRepository.findAllByOrderByCreatedAtDesc()
+				.stream()
+				.map(this::toResponse)
+				.toList();
+	}
+
+	@Transactional
+	public OrderResponse updateOrderStatus(UUID orderId, UpdateOrderStatusRequest request) {
+		Order order = orderRepository.findById(orderId)
+				.orElseThrow(() -> new ResourceNotFoundException("Заказ не найден"));
+		order.changeStatus(request.getStatus());
+
+		return toResponse(order);
 	}
 
 	private User findCurrentUser(String username) {
