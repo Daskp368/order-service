@@ -32,6 +32,18 @@ public class SecurityConfig {
 	private static final RequestMatcher LOGIN_REQUEST = PathPatternRequestMatcher
 			.withDefaults()
 			.matcher(HttpMethod.POST, "/api/auth/login");
+	private static final RequestMatcher OPENAPI_JSON_REQUEST = PathPatternRequestMatcher
+			.withDefaults()
+			.matcher("/v3/api-docs/**");
+	private static final RequestMatcher OPENAPI_YAML_REQUEST = PathPatternRequestMatcher
+			.withDefaults()
+			.matcher("/v3/api-docs.yaml");
+	private static final RequestMatcher SWAGGER_UI_REQUEST = PathPatternRequestMatcher
+			.withDefaults()
+			.matcher("/swagger-ui/**");
+	private static final RequestMatcher SWAGGER_UI_ENTRY_REQUEST = PathPatternRequestMatcher
+			.withDefaults()
+			.matcher("/swagger-ui.html");
 	private static final RequestMatcher ALL_ORDERS_REQUEST = PathPatternRequestMatcher
 			.withDefaults()
 			.matcher(HttpMethod.GET, "/api/orders/all");
@@ -75,6 +87,8 @@ public class SecurityConfig {
 						.accessDeniedHandler(accessDeniedHandler))
 				.authorizeHttpRequests(authorize -> authorize
 						.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+						.requestMatchers(OPENAPI_JSON_REQUEST, OPENAPI_YAML_REQUEST, SWAGGER_UI_REQUEST,
+								SWAGGER_UI_ENTRY_REQUEST).permitAll()
 						.requestMatchers(REGISTRATION_REQUEST, LOGIN_REQUEST).permitAll()
 						.requestMatchers(ALL_ORDERS_REQUEST, UPDATE_ORDER_REQUEST, ALL_USERS_REQUEST,
 								DELETE_USER_REQUEST).hasRole("ADMIN")

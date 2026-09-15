@@ -18,6 +18,7 @@
 - [x] Этап 11: административные операции и создание первого ADMIN.
 - [x] Этап 12: удаление заказов и пользователей.
 - [x] Этап 13: пагинация списков заказов.
+- [x] Этап 14: Swagger UI и OpenAPI-документация с Bearer JWT.
 
 API-контракт находится в [`docs/stage-0-api-contract.md`](docs/stage-0-api-contract.md).
 Конспект основы Spring Boot находится в [`docs/stage-1-spring-boot-foundation.md`](docs/stage-1-spring-boot-foundation.md).
@@ -33,8 +34,9 @@ API-контракт находится в [`docs/stage-0-api-contract.md`](docs
 Конспект административных операций находится в [`docs/stage-11-administrator-operations.md`](docs/stage-11-administrator-operations.md).
 Конспект удаления заказов и пользователей находится в [`docs/stage-12-deleting-orders-and-users.md`](docs/stage-12-deleting-orders-and-users.md).
 Конспект пагинации заказов находится в [`docs/stage-13-pagination.md`](docs/stage-13-pagination.md).
+Конспект Swagger и OpenAPI находится в [`docs/stage-14-swagger-openapi.md`](docs/stage-14-swagger-openapi.md).
 
-## Технологии этапа 1
+## Технологии проекта
 
 - Java 17 — целевая версия исходного кода и байткода;
 - Spring Boot 3.5.16;
@@ -46,6 +48,7 @@ API-контракт находится в [`docs/stage-0-api-contract.md`](docs
 
 JPA и PostgreSQL Driver добавлены на этапе 2. Flyway и первая версия схемы базы добавлены на этапе 3.
 JJWT 0.13.0 и stateless Bearer-аутентификация добавлены на этапе 8.
+Springdoc OpenAPI 2.9.0 и Swagger UI добавлены на этапе 14.
 
 ## Команды
 
@@ -62,6 +65,18 @@ JJWT 0.13.0 и stateless Bearer-аутентификация добавлены 
 ```
 
 Остановить запущенное приложение: `Ctrl+C`.
+
+После запуска доступны:
+
+```text
+Swagger UI:  http://localhost:8080/swagger-ui.html
+OpenAPI JSON: http://localhost:8080/v3/api-docs
+OpenAPI YAML: http://localhost:8080/v3/api-docs.yaml
+```
+
+Для защищённого запроса выполните `POST /api/auth/login`, скопируйте только значение поля `token`,
+нажмите `Authorize` в Swagger UI и вставьте токен. Swagger UI самостоятельно добавит префикс
+`Bearer` к заголовку `Authorization`.
 
 Глобальная установка Maven не требуется: скрипт `mvnw` скачивает и использует подходящую версию Maven.
 
@@ -113,6 +128,7 @@ ADMIN_PASSWORD=<надёжный пароль администратора>
 | `SelfDeletionNotAllowedException.java` | Запрет удаления администратором собственной учётной записи |
 | `InvalidPaginationException.java` | Ошибка недопустимых границ `page` и `size` |
 | `SecurityConfig.java` | BCrypt, stateless-режим и правила доступа к endpoints |
+| `OpenApiConfig.java` | Общая информация OpenAPI и схема Bearer JWT для Swagger UI |
 | `DatabaseUserDetailsService.java` | Загрузка пользователя и роли из PostgreSQL для Spring Security |
 | `JwtService.java` | Выпуск и проверка JWT с подписью `HS256` |
 | `JwtAuthenticationFilter.java` | Bearer-аутентификация защищённых запросов |
@@ -123,6 +139,7 @@ ADMIN_PASSWORD=<надёжный пароль администратора>
 | `AdminInitializerTest.java` | Проверка создания первого ADMIN и защиты существующих пользователей |
 | `DeletionOperationsIntegrationTest.java` | Проверка удаления, владельца, ролей и каскада PostgreSQL |
 | `OrderPaginationIntegrationTest.java` | Проверка страниц, метаданных, сортировки и ошибок пагинации |
+| `OpenApiIntegrationTest.java` | Проверка OpenAPI-схемы, всех операций, Swagger UI и Bearer JWT |
 | `ApiErrorResponse.java`, `FieldValidationError.java` | Единый JSON обычных ошибок и ошибок полей |
 | `ApiExceptionHandler.java` | Преобразование исключений в безопасные HTTP-ответы |
 | `CreateOrderRequest.java` | Входной DTO с правилом проверки будущего описания заказа |
@@ -132,7 +149,8 @@ ADMIN_PASSWORD=<надёжный пароль администратора>
 
 ## Ожидаемое поведение безопасности
 
-`POST /api/auth/register` и `POST /api/auth/login` доступны без аутентификации. Остальные запросы требуют JWT в заголовке:
+`POST /api/auth/register`, `POST /api/auth/login` и технические пути Swagger/OpenAPI доступны без
+аутентификации. Остальные запросы требуют JWT в заголовке:
 
 ```http
 Authorization: Bearer <token>
@@ -162,3 +180,4 @@ Authorization: Bearer <token>
 
 - [Spring Boot 3.5](https://docs.spring.io/spring-boot/3.5/)
 - [Apache Maven](https://maven.apache.org/guides/)
+- [Springdoc OpenAPI](https://springdoc.org/)
