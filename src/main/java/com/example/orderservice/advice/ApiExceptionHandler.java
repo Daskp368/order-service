@@ -19,6 +19,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import com.example.orderservice.dto.error.ApiErrorResponse;
 import com.example.orderservice.dto.error.FieldValidationError;
 import com.example.orderservice.exception.ResourceNotFoundException;
+import com.example.orderservice.exception.SelfDeletionNotAllowedException;
 import com.example.orderservice.exception.UsernameAlreadyExistsException;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -67,6 +68,12 @@ public class ApiExceptionHandler {
 	public ResponseEntity<ApiErrorResponse> handleResourceNotFound(ResourceNotFoundException exception,
 			HttpServletRequest request) {
 		return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request, List.of());
+	}
+
+	@ExceptionHandler(SelfDeletionNotAllowedException.class)
+	public ResponseEntity<ApiErrorResponse> handleSelfDeletionNotAllowed(SelfDeletionNotAllowedException exception,
+			HttpServletRequest request) {
+		return buildResponse(HttpStatus.CONFLICT, exception.getMessage(), request, List.of());
 	}
 
 	@ExceptionHandler(AuthenticationException.class)

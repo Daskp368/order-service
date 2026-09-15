@@ -41,6 +41,9 @@ public class SecurityConfig {
 	private static final RequestMatcher ALL_USERS_REQUEST = PathPatternRequestMatcher
 			.withDefaults()
 			.matcher(HttpMethod.GET, "/api/users");
+	private static final RequestMatcher DELETE_USER_REQUEST = PathPatternRequestMatcher
+			.withDefaults()
+			.matcher(HttpMethod.DELETE, "/api/users/{id}");
 
 	@Bean
 	public PasswordEncoder passwordEncoder() {
@@ -73,7 +76,8 @@ public class SecurityConfig {
 				.authorizeHttpRequests(authorize -> authorize
 						.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
 						.requestMatchers(REGISTRATION_REQUEST, LOGIN_REQUEST).permitAll()
-						.requestMatchers(ALL_ORDERS_REQUEST, UPDATE_ORDER_REQUEST, ALL_USERS_REQUEST).hasRole("ADMIN")
+						.requestMatchers(ALL_ORDERS_REQUEST, UPDATE_ORDER_REQUEST, ALL_USERS_REQUEST,
+								DELETE_USER_REQUEST).hasRole("ADMIN")
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

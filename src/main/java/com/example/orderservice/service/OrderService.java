@@ -12,6 +12,7 @@ import com.example.orderservice.dto.order.OrderResponse;
 import com.example.orderservice.dto.order.UpdateOrderStatusRequest;
 import com.example.orderservice.entity.Order;
 import com.example.orderservice.entity.OrderStatus;
+import com.example.orderservice.entity.Role;
 import com.example.orderservice.entity.User;
 import com.example.orderservice.exception.ResourceNotFoundException;
 import com.example.orderservice.repository.OrderRepository;
@@ -66,6 +67,23 @@ public class OrderService {
 		order.changeStatus(request.getStatus());
 
 		return toResponse(order);
+	}
+
+	@Transactional
+	public void deleteOrder(UUID orderId, String username) {
+		User currentUser = findCurrentUser(username);
+		Order order = findDeletableOrder(orderId, currentUser);
+		orderRepository.delete(order);
+	}
+
+	private Order findDeletableOrder(UUID orderId, User currentUser) {
+		if (currentUser.getRole() == Role.ADMIN) {
+			return orderRepository.findById(orderId)
+					.orElseThrow(() -> new ResourceNotFoundException("Заказ не найден"));
+		}
+
+		return orderRepository.findByIdAndUser_Id(orderId, currentUser.getId())
+				.orElseThrow(() -> new ResourceNotFoundException("Заказ не найден"));
 	}
 
 	private User findCurrentUser(String username) {

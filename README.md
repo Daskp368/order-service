@@ -16,6 +16,7 @@
 - [x] Этап 9: получение текущего пользователя.
 - [x] Этап 10: создание и получение заказов текущего пользователя.
 - [x] Этап 11: административные операции и создание первого ADMIN.
+- [x] Этап 12: удаление заказов и пользователей.
 
 API-контракт находится в [`docs/stage-0-api-contract.md`](docs/stage-0-api-contract.md).
 Конспект основы Spring Boot находится в [`docs/stage-1-spring-boot-foundation.md`](docs/stage-1-spring-boot-foundation.md).
@@ -29,6 +30,7 @@ API-контракт находится в [`docs/stage-0-api-contract.md`](docs
 Конспект получения текущего пользователя находится в [`docs/stage-9-current-user.md`](docs/stage-9-current-user.md).
 Конспект создания и получения заказов находится в [`docs/stage-10-creating-and-listing-orders.md`](docs/stage-10-creating-and-listing-orders.md).
 Конспект административных операций находится в [`docs/stage-11-administrator-operations.md`](docs/stage-11-administrator-operations.md).
+Конспект удаления заказов и пользователей находится в [`docs/stage-12-deleting-orders-and-users.md`](docs/stage-12-deleting-orders-and-users.md).
 
 ## Технологии этапа 1
 
@@ -101,10 +103,11 @@ ADMIN_PASSWORD=<надёжный пароль администратора>
 | `UpdateOrderStatusRequest.java` | Входной DTO изменения статуса заказа |
 | `AuthController.java` | HTTP endpoints регистрации, входа и текущего пользователя |
 | `AuthService.java` | Регистрация, проверка учётных данных, выпуск JWT и чтение текущего пользователя |
-| `OrderController.java` | HTTP endpoints создания, получения и административного обновления заказов |
-| `OrderService.java` | Создание заказов, выборки владельца/ADMIN и изменение статуса |
-| `UserController.java`, `UserService.java` | Административный список пользователей без паролей и хешей |
+| `OrderController.java` | HTTP endpoints создания, получения, обновления статуса и удаления заказов |
+| `OrderService.java` | Создание, выборка, изменение статуса и удаление заказов с проверкой владельца |
+| `UserController.java`, `UserService.java` | Административные получение и удаление пользователей |
 | `AdminInitializer.java` | Безопасное создание первого администратора при старте приложения |
+| `SelfDeletionNotAllowedException.java` | Запрет удаления администратором собственной учётной записи |
 | `SecurityConfig.java` | BCrypt, stateless-режим и правила доступа к endpoints |
 | `DatabaseUserDetailsService.java` | Загрузка пользователя и роли из PostgreSQL для Spring Security |
 | `JwtService.java` | Выпуск и проверка JWT с подписью `HS256` |
@@ -114,6 +117,7 @@ ADMIN_PASSWORD=<надёжный пароль администратора>
 | `OrderApiIntegrationTest.java` | Проверка создания заказа и изоляции заказов пользователей |
 | `AdminOperationsIntegrationTest.java` | Проверка административных endpoint и ролевых запретов |
 | `AdminInitializerTest.java` | Проверка создания первого ADMIN и защиты существующих пользователей |
+| `DeletionOperationsIntegrationTest.java` | Проверка удаления, владельца, ролей и каскада PostgreSQL |
 | `ApiErrorResponse.java`, `FieldValidationError.java` | Единый JSON обычных ошибок и ошибок полей |
 | `ApiExceptionHandler.java` | Преобразование исключений в безопасные HTTP-ответы |
 | `CreateOrderRequest.java` | Входной DTO с правилом проверки будущего описания заказа |
@@ -131,7 +135,7 @@ Authorization: Bearer <token>
 
 Приложение работает без HTTP-сессии, form login и HTTP Basic. Пользователь и его актуальная роль загружаются из PostgreSQL при каждом защищённом запросе.
 
-`GET /api/users`, `GET /api/orders/all` и `PUT /api/orders/{id}` требуют authority `ROLE_ADMIN`.
+`GET /api/users`, `DELETE /api/users/{id}`, `GET /api/orders/all` и `PUT /api/orders/{id}` требуют authority `ROLE_ADMIN`.
 Анонимный клиент получает `401 Unauthorized`, а аутентифицированный `USER` — `403 Forbidden`.
 
 `GET /api/auth/me` возвращает `id`, `username` и актуальную роль владельца предъявленного JWT. Endpoint не принимает `userId`: пользователя определяет сервер из текущей `Authentication`.
@@ -141,6 +145,11 @@ Authorization: Bearer <token>
 `GET /api/orders/all` возвращает ADMIN заказы всех владельцев. `PUT /api/orders/{id}` меняет только
 статус; описание, владелец и время создания остаются прежними. До этапа 13 списки возвращаются обычными
 JSON-массивами без пагинации.
+
+`DELETE /api/orders/{id}` возвращает `204 No Content` владельцу заказа или ADMIN. Для USER чужой и
+отсутствующий заказ дают одинаковый `404 Not Found`. `DELETE /api/users/{id}` доступен только ADMIN;
+самоудаление администратора даёт `409 Conflict`, а заказы удаляемого пользователя удаляет PostgreSQL
+через `ON DELETE CASCADE`. Старый JWT удалённого пользователя больше не проходит аутентификацию.
 
 ## Документация
 
