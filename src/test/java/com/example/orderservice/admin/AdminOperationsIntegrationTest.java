@@ -109,14 +109,17 @@ class AdminOperationsIntegrationTest {
 				.andReturn();
 
 		JsonNode responseBody = objectMapper.readTree(result.getResponse().getContentAsString());
-		List<String> orderIds = responseBody.findValuesAsText("id");
+		JsonNode contentNode = responseBody.path("content");
+		List<String> orderIds = contentNode.findValuesAsText("id");
 		assertThat(orderIds).contains(olderOrder.getId().toString(), newerOrder.getId().toString());
 		assertThat(orderIds.indexOf(newerOrder.getId().toString()))
 				.isLessThan(orderIds.indexOf(olderOrder.getId().toString()));
-		assertThat(findOrder(responseBody, olderOrder.getId()).get("userId").asText())
+		assertThat(findOrder(contentNode, olderOrder.getId()).get("userId").asText())
 				.isEqualTo(firstOwner.getId().toString());
-		assertThat(findOrder(responseBody, newerOrder.getId()).get("userId").asText())
+		assertThat(findOrder(contentNode, newerOrder.getId()).get("userId").asText())
 				.isEqualTo(secondOwner.getId().toString());
+		assertThat(responseBody.path("page").asInt()).isZero();
+		assertThat(responseBody.path("size").asInt()).isEqualTo(20);
 	}
 
 	@Test

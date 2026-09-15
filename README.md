@@ -17,6 +17,7 @@
 - [x] Этап 10: создание и получение заказов текущего пользователя.
 - [x] Этап 11: административные операции и создание первого ADMIN.
 - [x] Этап 12: удаление заказов и пользователей.
+- [x] Этап 13: пагинация списков заказов.
 
 API-контракт находится в [`docs/stage-0-api-contract.md`](docs/stage-0-api-contract.md).
 Конспект основы Spring Boot находится в [`docs/stage-1-spring-boot-foundation.md`](docs/stage-1-spring-boot-foundation.md).
@@ -31,6 +32,7 @@ API-контракт находится в [`docs/stage-0-api-contract.md`](docs
 Конспект создания и получения заказов находится в [`docs/stage-10-creating-and-listing-orders.md`](docs/stage-10-creating-and-listing-orders.md).
 Конспект административных операций находится в [`docs/stage-11-administrator-operations.md`](docs/stage-11-administrator-operations.md).
 Конспект удаления заказов и пользователей находится в [`docs/stage-12-deleting-orders-and-users.md`](docs/stage-12-deleting-orders-and-users.md).
+Конспект пагинации заказов находится в [`docs/stage-13-pagination.md`](docs/stage-13-pagination.md).
 
 ## Технологии этапа 1
 
@@ -96,10 +98,11 @@ ADMIN_PASSWORD=<надёжный пароль администратора>
 | `User.java`, `Order.java` | JPA-сущности пользователей и заказов |
 | `Role.java`, `OrderStatus.java` | Допустимые роли и статусы заказов |
 | `UserRepository.java` | Доступ к данным пользователей |
-| `OrderRepository.java` | Доступ к данным заказов |
+| `OrderRepository.java` | Доступ к данным заказов, включая пагинированную выборку владельца |
 | `RegisterRequest.java`, `UserResponse.java` | Входной и выходной DTO регистрации |
 | `LoginRequest.java`, `LoginResponse.java` | Входной и выходной DTO аутентификации |
 | `CreateOrderRequest.java`, `OrderResponse.java` | Входной и выходной DTO заказа |
+| `PagedResponse.java` | Стабильный JSON-контракт страницы с содержимым и метаданными |
 | `UpdateOrderStatusRequest.java` | Входной DTO изменения статуса заказа |
 | `AuthController.java` | HTTP endpoints регистрации, входа и текущего пользователя |
 | `AuthService.java` | Регистрация, проверка учётных данных, выпуск JWT и чтение текущего пользователя |
@@ -108,6 +111,7 @@ ADMIN_PASSWORD=<надёжный пароль администратора>
 | `UserController.java`, `UserService.java` | Административные получение и удаление пользователей |
 | `AdminInitializer.java` | Безопасное создание первого администратора при старте приложения |
 | `SelfDeletionNotAllowedException.java` | Запрет удаления администратором собственной учётной записи |
+| `InvalidPaginationException.java` | Ошибка недопустимых границ `page` и `size` |
 | `SecurityConfig.java` | BCrypt, stateless-режим и правила доступа к endpoints |
 | `DatabaseUserDetailsService.java` | Загрузка пользователя и роли из PostgreSQL для Spring Security |
 | `JwtService.java` | Выпуск и проверка JWT с подписью `HS256` |
@@ -118,6 +122,7 @@ ADMIN_PASSWORD=<надёжный пароль администратора>
 | `AdminOperationsIntegrationTest.java` | Проверка административных endpoint и ролевых запретов |
 | `AdminInitializerTest.java` | Проверка создания первого ADMIN и защиты существующих пользователей |
 | `DeletionOperationsIntegrationTest.java` | Проверка удаления, владельца, ролей и каскада PostgreSQL |
+| `OrderPaginationIntegrationTest.java` | Проверка страниц, метаданных, сортировки и ошибок пагинации |
 | `ApiErrorResponse.java`, `FieldValidationError.java` | Единый JSON обычных ошибок и ошибок полей |
 | `ApiExceptionHandler.java` | Преобразование исключений в безопасные HTTP-ответы |
 | `CreateOrderRequest.java` | Входной DTO с правилом проверки будущего описания заказа |
@@ -140,11 +145,13 @@ Authorization: Bearer <token>
 
 `GET /api/auth/me` возвращает `id`, `username` и актуальную роль владельца предъявленного JWT. Endpoint не принимает `userId`: пользователя определяет сервер из текущей `Authentication`.
 
-`POST /api/orders` создаёт заказ текущего пользователя. Сервер сам назначает владельца, статус `CREATED` и время создания. `GET /api/orders` возвращает только заказы владельца JWT, от новых к старым. Пагинация будет добавлена на этапе 13.
+`POST /api/orders` создаёт заказ текущего пользователя. Сервер сам назначает владельца, статус `CREATED` и время создания. `GET /api/orders` возвращает страницу только заказов владельца JWT, от новых к старым.
 
-`GET /api/orders/all` возвращает ADMIN заказы всех владельцев. `PUT /api/orders/{id}` меняет только
-статус; описание, владелец и время создания остаются прежними. До этапа 13 списки возвращаются обычными
-JSON-массивами без пагинации.
+`GET /api/orders/all` возвращает ADMIN страницу заказов всех владельцев. Оба списка принимают `page`
+со значением по умолчанию `0` и `size` со значением по умолчанию `20`; допустимый `size` — от `1` до
+`100`. Ответ содержит `content`, `page`, `size`, `totalElements` и `totalPages`. Стабильный порядок
+задаётся через `createdAt DESC, id DESC`. `PUT /api/orders/{id}` меняет только статус; описание,
+владелец и время создания остаются прежними.
 
 `DELETE /api/orders/{id}` возвращает `204 No Content` владельцу заказа или ADMIN. Для USER чужой и
 отсутствующий заказ дают одинаковый `404 Not Found`. `DELETE /api/users/{id}` доступен только ADMIN;

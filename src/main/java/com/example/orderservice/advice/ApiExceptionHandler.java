@@ -18,6 +18,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import com.example.orderservice.dto.error.ApiErrorResponse;
 import com.example.orderservice.dto.error.FieldValidationError;
+import com.example.orderservice.exception.InvalidPaginationException;
 import com.example.orderservice.exception.ResourceNotFoundException;
 import com.example.orderservice.exception.SelfDeletionNotAllowedException;
 import com.example.orderservice.exception.UsernameAlreadyExistsException;
@@ -56,6 +57,12 @@ public class ApiExceptionHandler {
 	public ResponseEntity<ApiErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException exception,
 			HttpServletRequest request) {
 		return buildResponse(HttpStatus.BAD_REQUEST, "Некорректный параметр запроса", request, List.of());
+	}
+
+	@ExceptionHandler(InvalidPaginationException.class)
+	public ResponseEntity<ApiErrorResponse> handleInvalidPagination(InvalidPaginationException exception,
+			HttpServletRequest request) {
+		return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request, List.of());
 	}
 
 	@ExceptionHandler(UsernameAlreadyExistsException.class)

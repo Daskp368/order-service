@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -125,15 +124,19 @@ class OrderApiIntegrationTest {
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
 				.andExpect(status().isOk())
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-				.andExpect(jsonPath("$.length()").value(2))
-				.andExpect(jsonPath("$[0].id").value(newerOrder.getId().toString()))
-				.andExpect(jsonPath("$[0].description").value("Новый заказ"))
-				.andExpect(jsonPath("$[1].id").value(olderOrder.getId().toString()))
-				.andExpect(jsonPath("$[1].description").value("Старый заказ"))
+				.andExpect(jsonPath("$.content.length()").value(2))
+				.andExpect(jsonPath("$.content[0].id").value(newerOrder.getId().toString()))
+				.andExpect(jsonPath("$.content[0].description").value("Новый заказ"))
+				.andExpect(jsonPath("$.content[1].id").value(olderOrder.getId().toString()))
+				.andExpect(jsonPath("$.content[1].description").value("Старый заказ"))
+				.andExpect(jsonPath("$.page").value(0))
+				.andExpect(jsonPath("$.size").value(20))
+				.andExpect(jsonPath("$.totalElements").value(2))
+				.andExpect(jsonPath("$.totalPages").value(1))
 				.andReturn();
 
-		JsonNode responseBody = objectMapper.readTree(result.getResponse().getContentAsString());
-		assertThat(responseBody)
+		JsonNode contentNode = objectMapper.readTree(result.getResponse().getContentAsString()).path("content");
+		assertThat(contentNode)
 				.allSatisfy(order -> {
 					assertThat(order.get("userId").asText()).isEqualTo(currentUser.getId().toString());
 					assertThat(order.has("user")).isFalse();
@@ -150,9 +153,9 @@ class OrderApiIntegrationTest {
 		mockMvc.perform(get("/api/orders")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtService.generateToken(admin.getUsername())))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.length()").value(1))
-				.andExpect(jsonPath("$[0].id").value(adminOrder.getId().toString()))
-				.andExpect(jsonPath("$[0].userId").value(admin.getId().toString()));
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].id").value(adminOrder.getId().toString()))
+				.andExpect(jsonPath("$.content[0].userId").value(admin.getId().toString()));
 	}
 
 	@Test
