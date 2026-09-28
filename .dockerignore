@@ -1,0 +1,11 @@
+.DS_Store
+.env
+.git
+.gitignore
+.idea
+.vscode
+*.iml
+target
+docs
+README.md
+mvnw.cmd
