@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.ErrorResponse;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -44,18 +44,21 @@ public class ApiExceptionHandler {
 						.thenComparing(FieldValidationError::getMessage))
 				.toList();
 
+		logRequestError(HttpStatus.BAD_REQUEST, request, exception);
 		return buildResponse(HttpStatus.BAD_REQUEST, "Ошибка валидации", request, fieldErrors);
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	public ResponseEntity<ApiErrorResponse> handleUnreadableMessage(HttpMessageNotReadableException exception,
 			HttpServletRequest request) {
+		logRequestError(HttpStatus.BAD_REQUEST, request, exception);
 		return buildResponse(HttpStatus.BAD_REQUEST, "Некорректный JSON", request, List.of());
 	}
 
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
 	public ResponseEntity<ApiErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException exception,
 			HttpServletRequest request) {
+		logRequestError(HttpStatus.BAD_REQUEST, request, exception);
 		return buildResponse(HttpStatus.BAD_REQUEST, "Некорректный параметр запроса", request, List.of());
 	}
 
@@ -95,12 +98,18 @@ public class ApiExceptionHandler {
 		if (exception instanceof ErrorResponse errorResponse) {
 			HttpStatus status = HttpStatus.resolve(errorResponse.getStatusCode().value());
 			if (status != null) {
+				logRequestError(status, request, exception);
 				return buildResponse(status, status.getReasonPhrase(), request, List.of());
 			}
 		}
 
-		LOGGER.error("Непредвиденная ошибка при обработке {} {}", request.getMethod(), request.getRequestURI(), exception);
+		logRequestError(HttpStatus.INTERNAL_SERVER_ERROR, request, exception);
 		return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Внутренняя ошибка сервера", request, List.of());
+	}
+
+	private void logRequestError(HttpStatus status, HttpServletRequest request, Exception exception) {
+		LOGGER.error("Ошибка обработки HTTP-запроса: method={}, path={}, status={}",
+				request.getMethod(), request.getRequestURI(), status.value(), exception);
 	}
 
 	private ResponseEntity<ApiErrorResponse> buildResponse(HttpStatus status, String message,

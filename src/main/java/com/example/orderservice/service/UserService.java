@@ -3,6 +3,8 @@ package com.example.orderservice.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +17,8 @@ import com.example.orderservice.repository.UserRepository;
 @Service
 public class UserService {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class);
+
 	private final UserRepository userRepository;
 
 	public UserService(UserRepository userRepository) {
@@ -23,25 +27,47 @@ public class UserService {
 
 	@Transactional(readOnly = true)
 	public List<UserResponse> getAllUsers() {
-		return userRepository.findAllByOrderByUsernameAsc()
-				.stream()
-				.map(this::toResponse)
-				.toList();
+		LOGGER.info("Начато получение списка пользователей");
+
+		try {
+			List<UserResponse> response = userRepository.findAllByOrderByUsernameAsc()
+					.stream()
+					.map(this::toResponse)
+					.toList();
+
+			LOGGER.info("Получение списка пользователей завершено: usersCount={}", response.size());
+			return response;
+		}
+		catch (RuntimeException exception) {
+			LOGGER.error("Ошибка получения списка пользователей", exception);
+			throw exception;
+		}
 	}
 
 	@Transactional
 	public void deleteUser(UUID userId, String currentUsername) {
-		User currentAdmin = userRepository.findByUsername(currentUsername)
-				.orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
-		User userToDelete = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+		LOGGER.info("Начато удаление пользователя: userId={}, currentUsername={}", userId, currentUsername);
 
-		if (currentAdmin.getId().equals(userToDelete.getId())) {
-			throw new SelfDeletionNotAllowedException(
-					"Администратор не может удалить собственную учётную запись");
+		try {
+			User currentAdmin = userRepository.findByUsername(currentUsername)
+					.orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+			User userToDelete = userRepository.findById(userId)
+					.orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+
+			if (currentAdmin.getId().equals(userToDelete.getId())) {
+				throw new SelfDeletionNotAllowedException(
+						"Администратор не может удалить собственную учётную запись");
+			}
+
+			userRepository.delete(userToDelete);
+			LOGGER.info("Удаление пользователя завершено: userId={}, deletedUsername={}",
+					userId, userToDelete.getUsername());
 		}
-
-		userRepository.delete(userToDelete);
+		catch (RuntimeException exception) {
+			LOGGER.error("Ошибка удаления пользователя: userId={}, currentUsername={}",
+					userId, currentUsername, exception);
+			throw exception;
+		}
 	}
 
 	private UserResponse toResponse(User user) {

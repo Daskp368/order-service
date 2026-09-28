@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -17,6 +19,8 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class SecurityErrorResponseWriter {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(SecurityErrorResponseWriter.class);
+
 	private final ObjectMapper objectMapper;
 
 	public SecurityErrorResponseWriter(ObjectMapper objectMapper) {
@@ -25,6 +29,9 @@ public class SecurityErrorResponseWriter {
 
 	public void write(HttpServletRequest request, HttpServletResponse response, HttpStatus status, String message)
 			throws IOException {
+		LOGGER.error("Ошибка безопасности HTTP-запроса: method={}, path={}, status={}, message={}",
+				request.getMethod(), request.getRequestURI(), status.value(), message);
+
 		ApiErrorResponse errorResponse = new ApiErrorResponse(
 				Instant.now(),
 				status.value(),
